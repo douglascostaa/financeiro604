@@ -159,58 +159,58 @@ export default function Home() {
 
           <div className={styles.grid}>
             <div className={styles.card}>
-              <div className={styles.cardIcon + " " + styles.iconTotal}>
-                <TrendingDown size={24} />
-              </div>
-              <div>
+              <div className={styles.cardHeader}>
                 <p className={styles.cardLabel}>Total do Mês</p>
-                <h2 className={styles.cardValue + " " + styles.valueTotal}>
-                  R$ {stats.total.toFixed(2)}
-                </h2>
+                <div className={styles.cardIcon + " " + styles.iconTotal}>
+                  <TrendingDown size={24} />
+                </div>
               </div>
+              <h2 className={styles.cardValue + " " + styles.valueTotal}>
+                R$ {stats.total.toFixed(2)}
+              </h2>
               <p className={styles.cardSub}>+12% vs mês anterior</p>
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardIcon + " " + styles.iconDouglas}>
-                <Wallet size={24} />
-              </div>
-              <div>
+              <div className={styles.cardHeader}>
                 <p className={styles.cardLabel}>Douglas pagou</p>
-                <h2 className={styles.cardValue + " " + styles.valueDouglas}>
-                  R$ {stats.douglasPaid.toFixed(2)}
-                </h2>
+                <div className={styles.cardIcon + " " + styles.iconDouglas}>
+                  <Wallet size={24} />
+                </div>
               </div>
+              <h2 className={styles.cardValue + " " + styles.valueDouglas}>
+                R$ {stats.douglasPaid.toFixed(2)}
+              </h2>
               <p className={styles.cardSub}>
                 {(stats.douglasPaid / (stats.total || 1) * 100).toFixed(0)}% do total
               </p>
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardIcon + " " + styles.iconLara}>
-                <Wallet size={24} />
-              </div>
-              <div>
+              <div className={styles.cardHeader}>
                 <p className={styles.cardLabel}>Lara pagou</p>
-                <h2 className={styles.cardValue + " " + styles.valueLara}>
-                  R$ {stats.laraPaid.toFixed(2)}
-                </h2>
+                <div className={styles.cardIcon + " " + styles.iconLara}>
+                  <Wallet size={24} />
+                </div>
               </div>
+              <h2 className={styles.cardValue + " " + styles.valueLara}>
+                R$ {stats.laraPaid.toFixed(2)}
+              </h2>
               <p className={styles.cardSub}>
                 {(stats.laraPaid / (stats.total || 1) * 100).toFixed(0)}% do total
               </p>
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardIcon + " " + styles.iconAcerto}>
-                <ArrowRightLeft size={24} />
-              </div>
-              <div>
+              <div className={styles.cardHeader}>
                 <p className={styles.cardLabel}>Acerto do Mês</p>
-                <h2 className={styles.cardValue + " " + styles.valueAcerto}>
-                  R$ {stats.acerto.toFixed(2)}
-                </h2>
+                <div className={styles.cardIcon + " " + styles.iconAcerto}>
+                  <ArrowRightLeft size={24} />
+                </div>
               </div>
+              <h2 className={styles.cardValue + " " + styles.valueAcerto}>
+                R$ {stats.acerto.toFixed(2)}
+              </h2>
               <p className={styles.cardSub}>
                 {diff > 0 ? "Lara deve pagar Douglas" : diff < 0 ? "Douglas deve pagar Lara" : "Tudo certo!"}
               </p>
