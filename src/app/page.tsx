@@ -74,12 +74,16 @@ export default function Home() {
     acerto: 0,
   };
 
-  // Cálculo do Acerto (Simples: Diferença dividido por 2)
-  // Se Douglas pagou 1000 e Lara 0. Total 1000. Cada um deve 500. Lara deve 500 pro Douglas.
-  // Diff = Douglas - Lara.
-  // Se positivo, Douglas pagou mais -> Lara deve (Diff/2)
-  // Se negativo, Lara pagou mais -> Douglas deve (Diff/2)
-  const diff = stats.douglasPaid - stats.laraPaid;
+  // Cálculo do Acerto (Considerando APENAS gastos compartilhados)
+  const douglasPaidShared = transactions
+    .filter((t) => t.paid_by === "Douglas" && t.is_shared)
+    .reduce((acc, t) => acc + Number(t.amount), 0);
+
+  const laraPaidShared = transactions
+    .filter((t) => t.paid_by === "Lara" && t.is_shared)
+    .reduce((acc, t) => acc + Number(t.amount), 0);
+
+  const diff = douglasPaidShared - laraPaidShared;
   stats.acerto = Math.abs(diff) / 2;
 
   // Group transactions by category for the chart
