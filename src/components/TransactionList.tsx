@@ -129,9 +129,21 @@ export default function TransactionList({
                             </div>
 
                             <div className={styles.amountBox}>
-                                <span className={styles.amount}>R$ {Number(t.amount).toFixed(2)}</span>
+                                <span className={styles.amount}>
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.amount))}
+                                </span>
                                 {t.is_shared && (
-                                    <span className={styles.splitSub}>+2 = R$ {(Number(t.amount) / 2).toFixed(2)}</span>
+                                    <span className={styles.splitSub}>
+                                        {t.split_type === 'custom' && t.share_douglas != null && t.share_lara != null ? (
+                                            <span style={{ display: 'flex', gap: '4px', fontSize: '10px' }}>
+                                                <span style={{ color: '#3b82f6' }}>D: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.share_douglas))}</span>
+                                                <span>|</span>
+                                                <span style={{ color: '#ec4899' }}>L: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.share_lara))}</span>
+                                            </span>
+                                        ) : (
+                                            `÷2 = ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.amount) / 2)}`
+                                        )}
+                                    </span>
                                 )}
                             </div>
                         </div>

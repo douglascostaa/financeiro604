@@ -154,6 +154,7 @@
 
 .cardRow strong {
     color: #0f172a;
+    font-weight: 500;
 }
 
 .confirmBtn {
@@ -184,7 +185,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 24px;
     outline: none;
-    font-size: 14px;
+    font-size: 16px;
     color: black;
 }
 

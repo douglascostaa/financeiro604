@@ -8,7 +8,9 @@ create table if not exists transactions (
   category text,
   paid_by text not null check (paid_by in ('Douglas', 'Lara')),
   is_shared boolean default true,
-  split_type text default 'equal', -- future proofing for uneven splits
+  split_type text default 'equal', -- 'equal' or 'custom'
+  share_douglas numeric, -- Amount stored for Douglas share in custom split
+  share_lara numeric,    -- Amount stored for Lara share in custom split
   raw_input text -- original text from chat
 );
 

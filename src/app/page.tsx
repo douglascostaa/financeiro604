@@ -28,6 +28,7 @@ interface DashboardStats {
 }
 
 export default function Home() {
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<"Douglas" | "Lara" | null>(null);
@@ -59,35 +60,74 @@ export default function Home() {
     }
   };
 
+  const checkRecurring = async () => {
+    try {
+      await fetch("/api/process-recurring");
+    } catch (e) {
+      console.error("Failed to check recurring expenses:", e);
+    }
+  };
+
   useEffect(() => {
-    fetchTransactions();
+    checkRecurring().then(() => fetchTransactions());
   }, []);
 
+  // Filter transactions by current month (Robust String Parsing)
+  const filteredTransactions = transactions.filter(t => {
+    if (!t.date || t.date.length < 10) return false;
+
+    // Assumes YYYY-MM-DD format from DB
+    const tYear = parseInt(t.date.substring(0, 4));
+    const tMonth = parseInt(t.date.substring(5, 7)) - 1; // 0-indexed for comparison with getMonth()
+
+    return tMonth === currentDate.getMonth() &&
+      tYear === currentDate.getFullYear();
+  });
+
   const stats: DashboardStats = {
-    total: transactions.reduce((acc, t) => acc + Number(t.amount), 0),
-    douglasPaid: transactions
+    total: filteredTransactions.reduce((acc, t) => acc + Number(t.amount), 0),
+    douglasPaid: filteredTransactions
       .filter((t) => t.paid_by === "Douglas")
       .reduce((acc, t) => acc + Number(t.amount), 0),
-    laraPaid: transactions
+    laraPaid: filteredTransactions
       .filter((t) => t.paid_by === "Lara")
       .reduce((acc, t) => acc + Number(t.amount), 0),
     acerto: 0,
   };
 
   // Cálculo do Acerto (Considerando APENAS gastos compartilhados)
-  const douglasPaidShared = transactions
-    .filter((t) => t.paid_by === "Douglas" && t.is_shared)
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+  let douglasPaidTotal = 0;
+  let laraPaidTotal = 0;
+  let douglasShareTotal = 0;
+  let laraShareTotal = 0;
 
-  const laraPaidShared = transactions
-    .filter((t) => t.paid_by === "Lara" && t.is_shared)
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+  filteredTransactions.forEach(t => {
+    if (!t.is_shared) return;
 
-  const diff = douglasPaidShared - laraPaidShared;
-  stats.acerto = Math.abs(diff) / 2;
+    const amount = Number(t.amount);
+
+    // Contribuição (Quem pagou)
+    if (t.paid_by === "Douglas") douglasPaidTotal += amount;
+    else laraPaidTotal += amount;
+
+    // Custo (Quem deve)
+    if (t.split_type === 'custom' && t.share_douglas !== undefined && t.share_lara !== undefined) {
+      douglasShareTotal += Number(t.share_douglas);
+      laraShareTotal += Number(t.share_lara);
+    } else {
+      douglasShareTotal += amount / 2;
+      laraShareTotal += amount / 2;
+    }
+  });
+
+  const douglasBalance = douglasPaidTotal - douglasShareTotal;
+  // const laraBalance = laraPaidTotal - laraShareTotal; (inverso do Douglas)
+
+  const diff = douglasBalance; // Se positivo, Douglas pagou a mais (Lara deve). Se negativo, Douglas deve.
+  stats.acerto = Math.abs(diff);
 
   // Group transactions by category for the chart
-  const categoryData = transactions.reduce((acc: any, t) => {
+  const categoryData = filteredTransactions.reduce((acc: any, t) => {
     acc[t.category || "Outros"] = (acc[t.category || "Outros"] || 0) + Number(t.amount);
     return acc;
   }, {});
@@ -117,6 +157,18 @@ export default function Home() {
     localStorage.removeItem("finance_user");
   }
 
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(1); // Avoids end-of-month overflow (e.g. Jan 31 -> Feb -> Mar)
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
+    });
+  };
+
+  const monthName = currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
   return (
     <main className={styles.container}>
       {!currentUser && <LoginScreen onSelectUser={handleUserLogin} />}
@@ -129,7 +181,7 @@ export default function Home() {
                 <span style={{ fontSize: "2rem" }}>💰</span> Finanças do Casal
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <p>Olá, {currentUser}! Visão geral de Janeiro</p>
+                <p>Olá, {currentUser}! Visão geral de {currentDate.toLocaleString('pt-BR', { month: 'long' })}</p>
                 <button
                   onClick={handleLogout}
                   style={{
@@ -148,14 +200,14 @@ export default function Home() {
             </div>
 
             <div className={styles.monthSelector}>
-              <button className={styles.navButton}>
+              <button className={styles.navButton} onClick={() => navigateMonth('prev')}>
                 <ChevronLeft size={20} color="#6b7280" />
               </button>
               <div className={styles.currentMonth}>
                 <Calendar size={18} color="#6b7280" />
-                <span>Janeiro 2026</span>
+                <span>{capitalizedMonth}</span>
               </div>
-              <button className={styles.navButton}>
+              <button className={styles.navButton} onClick={() => navigateMonth('next')}>
                 <ChevronRight size={20} color="#6b7280" />
               </button>
             </div>
@@ -170,7 +222,7 @@ export default function Home() {
                 </div>
               </div>
               <h2 className={styles.cardValue + " " + styles.valueTotal}>
-                R$ {stats.total.toFixed(2)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.total)}
               </h2>
               <p className={styles.cardSub}>+12% vs mês anterior</p>
             </div>
@@ -183,7 +235,7 @@ export default function Home() {
                 </div>
               </div>
               <h2 className={styles.cardValue + " " + styles.valueDouglas}>
-                R$ {stats.douglasPaid.toFixed(2)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.douglasPaid)}
               </h2>
               <p className={styles.cardSub}>
                 {(stats.douglasPaid / (stats.total || 1) * 100).toFixed(0)}% do total
@@ -198,7 +250,7 @@ export default function Home() {
                 </div>
               </div>
               <h2 className={styles.cardValue + " " + styles.valueLara}>
-                R$ {stats.laraPaid.toFixed(2)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.laraPaid)}
               </h2>
               <p className={styles.cardSub}>
                 {(stats.laraPaid / (stats.total || 1) * 100).toFixed(0)}% do total
@@ -213,7 +265,7 @@ export default function Home() {
                 </div>
               </div>
               <h2 className={styles.cardValue + " " + styles.valueAcerto}>
-                R$ {stats.acerto.toFixed(2)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.acerto)}
               </h2>
               <p className={styles.cardSub}>
                 {diff > 0 ? "Lara deve pagar Douglas" : diff < 0 ? "Douglas deve pagar Lara" : "Tudo certo!"}
@@ -241,7 +293,7 @@ export default function Home() {
                         {item.name}
                       </div>
                       <span className={styles.legendValue}>
-                        R$ {item.value.toFixed(2)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.value)}
                       </span>
                     </div>
                   ))}
@@ -256,7 +308,7 @@ export default function Home() {
 
             {/* Transaction List Section */}
             <TransactionList
-              transactions={transactions}
+              transactions={filteredTransactions}
               onDelete={() => fetchTransactions()}
             />
           </div>

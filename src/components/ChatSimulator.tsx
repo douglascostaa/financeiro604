@@ -75,7 +75,7 @@ export default function ChatSimulator({
 
             const data = await res.json();
 
-            if (data.success) {
+            if (data.success && data.data) {
                 const responseData = data.data;
                 const isTransaction = responseData.action === 'transaction';
                 const transactionData = responseData.transaction || null;
@@ -128,11 +128,16 @@ export default function ChatSimulator({
                 const result = await res.json(); // Get ID if it was a POST
 
                 // Update local state for context in next message
-                const savedId = data.id || result.id;
+                // If multiple IDs, use use the first one or just null for now as context might be single-transaction focused
+                const savedId = data.id || (result.ids ? result.ids[0] : result.id);
                 setLastSavedTransaction({ ...data, id: savedId });
 
+                const successMessage = result.count && result.count > 1
+                    ? `✅ ${result.count} parcelas salvas com sucesso!`
+                    : (data.id ? "✅ Atualizado com sucesso!" : "✅ Salvo com sucesso!");
+
                 setMessages(prev => prev.map(m =>
-                    m.id === msgId ? { ...m, content: data.id ? "✅ Atualizado com sucesso!" : "✅ Salvo com sucesso!", data: null } : m
+                    m.id === msgId ? { ...m, content: successMessage, data: null } : m
                 ));
                 onTransactionAdded();
             } else {
@@ -197,8 +202,27 @@ export default function ChatSimulator({
                                 </div>
                                 <div className={styles.cardRow}>
                                     <span>👤 Pagador:</span>
-                                    <span>{msg.data.pagador}</span>
+                                    <strong>{msg.data.pagador}</strong>
                                 </div>
+                                {msg.data.parcelas > 1 && (
+                                    <div className={styles.cardRow}>
+                                        <span>📅 Parcelas:</span>
+                                        <span>{msg.data.parcelas}x (Mensal)</span>
+                                    </div>
+                                )}
+                                {msg.data.split_type === 'custom' && (
+                                    <div className={styles.cardRow} style={{ alignItems: 'flex-start' }}>
+                                        <span>➗ Divisão:</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                            <span style={{ fontSize: '11px', color: '#3b82f6' }}>
+                                                Douglas: <b>R$ {msg.data.share_douglas}</b>
+                                            </span>
+                                            <span style={{ fontSize: '11px', color: '#ec4899' }}>
+                                                Lara: <b>R$ {msg.data.share_lara}</b>
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className={styles.actions}>
                                     <button
                                         onClick={() => handleConfirmTransaction(msg.id, msg.data)}

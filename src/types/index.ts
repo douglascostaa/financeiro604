@@ -7,6 +7,9 @@ export type Transaction = {
     category: string;
     paid_by: 'Douglas' | 'Lara';
     is_shared: boolean;
+    split_type?: 'equal' | 'custom';
+    share_douglas?: number;
+    share_lara?: number;
 };
 
 export type DashboardStats = {
